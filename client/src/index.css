@@ -96,6 +96,11 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
   text-align: left;
+
+  overflow: hidden;
+  word-wrap: break-word;     
+  word-break: break-all;     
+  text-overflow: ellipsis; 
 }
 
 .product-card:hover {

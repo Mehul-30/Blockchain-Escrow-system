@@ -17,14 +17,32 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Registering user:", formData);
+    console.log("Registering Product!:", formData);
 
-    try {
+      try {
       const res = await axios.post("http://localhost:5000/register", formData);
       alert(res.data.message);
     } catch (error) {
       console.error("Error:", error);
-      alert("Failed to register product.");
+
+      if (error.response) {
+        if (error.response.status === 409) {
+
+          alert("Product already exists!");
+        } else if (error.response.status === 500) {
+
+          alert("Server error while saving product. Please try again later.");
+        } else {
+
+          alert(`Error: ${error.response.data.message || "Unexpected error"}`);
+        }
+      } else if (error.request) {
+
+        alert("No response from server. Check your connection.");
+      } else {
+
+        alert("Sorry! Failed to send request.");
+      }
     }
   };
 

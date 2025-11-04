@@ -5,7 +5,7 @@ exports.register = async (req,res,next)=>{
 
     try {
     const [existing] = await connectionPool.execute(
-      "SELECT * FROM products WHERE productName = ? OR credentialId = ?",
+      "SELECT * FROM products WHERE productName = ? AND credentialId = ?",
       [productName, credentialId]
     );
 
