@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from 'axios'
 
 const BuyPage = () => {
@@ -24,23 +24,20 @@ const BuyPage = () => {
     fetchGames();
   }, []);
 
+  const orderSummaryRef = useRef(null);
+
   const handleOrder = (game) => {
     setSelectedGame(game);
-    console.log("Ordering:", game);
-    // TODO: Send to backend or start UPI / crypto flow
-  };
 
-  if(games.length===0){
-    return (
-      <div>
-        <h1>Loading</h1>
-      </div>
-    )
-  }
+    setTimeout(() => {
+      orderSummaryRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  };
 
   return (
     <div className="buy-container">
       <h2>Available Game Assets</h2>
+
       <div className="Product-list">
         {games.map((game) => (
           <div key={game.id} className="product-card">
@@ -54,7 +51,7 @@ const BuyPage = () => {
       </div>
 
       {selectedGame && (
-        <div className="order-summary">
+        <div ref={orderSummaryRef} className="order-summary">
           <h3>Order Summary</h3>
           <p><b>Game:</b> {selectedGame.name}</p>
           <p><b>Price:</b> ₹{selectedGame.price}</p>

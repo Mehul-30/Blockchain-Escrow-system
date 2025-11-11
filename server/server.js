@@ -7,10 +7,12 @@ require('dotenv').config();
 app.use(cors());
 app.use(express.json());
 
-app.use(require('./Routes/register'));
-app.use(require('./Routes/products'));
+app.use("/user", require("./Routes/userAuthentication"));   
+app.use("/products", require("./Routes/getUserProduct"));  
+app.use("/products", require("./Routes/registerProduct"));  
+app.use("/products", require("./Routes/getProducts"));
 
 
-app.listen(5000, () => {
-  console.log("Server running at http://localhost:5000");
+app.listen(process.env.PORT, () => {
+  console.log(`Server running at http://localhost:${process.env.PORT}`);
 });

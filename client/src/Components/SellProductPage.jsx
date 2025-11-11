@@ -1,8 +1,9 @@
 import React, { useState } from "react";
+import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 
 
-const RegisterPage = () => {
+const SellProductPage = () => {
   const [formData, setFormData] = useState({
     productName: "",
     credentialId: "",
@@ -19,28 +20,36 @@ const RegisterPage = () => {
     e.preventDefault();
     console.log("Registering Product!:", formData);
 
-      try {
-      const res = await axios.post("http://localhost:5000/register", formData);
-      alert(res.data.message);
+    try {
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("You must be logged in to list a product!");
+        return;
+      }
+
+      const decoded = jwtDecode(token);
+      const userId = decoded.id;
+
+      const productData = { ...formData, user_id: userId };
+
+      const res = await axios.post("http://localhost:5000/products/sellproduct", productData);
+
+      alert(res.data.message || "Product registered successfully!");
     } catch (error) {
       console.error("Error:", error);
 
       if (error.response) {
         if (error.response.status === 409) {
-
           alert("Product already exists!");
         } else if (error.response.status === 500) {
-
           alert("Server error while saving product. Please try again later.");
         } else {
-
           alert(`Error: ${error.response.data.message || "Unexpected error"}`);
         }
       } else if (error.request) {
-
         alert("No response from server. Check your connection.");
       } else {
-
         alert("Sorry! Failed to send request.");
       }
     }
@@ -111,4 +120,4 @@ const RegisterPage = () => {
   );
 };
 
-export default RegisterPage;
+export default SellProductPage;

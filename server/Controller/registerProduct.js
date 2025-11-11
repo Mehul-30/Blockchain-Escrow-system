@@ -1,7 +1,7 @@
 const connectionPool = require('../Config/connectToSQL')
 
-exports.register = async (req,res,next)=>{
-    const { productName, credentialId, password, price, walletAddress } = req.body;
+exports.registerProduct = async (req,res,next)=>{
+    const { user_id, productName, credentialId, password, price, walletAddress } = req.body;
 
     try {
     const [existing] = await connectionPool.execute(
@@ -14,11 +14,12 @@ exports.register = async (req,res,next)=>{
     }
 
     const sql = `
-      INSERT INTO products (productName, credentialId, password, price, walletAddress)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO products (user_id, productName, credentialId, password, price, walletAddress)
+      VALUES (?, ?, ?, ?, ?, ?)
     `;
 
     const [result] = await connectionPool.execute(sql, [
+      user_id,
       productName,
       credentialId,
       password,
