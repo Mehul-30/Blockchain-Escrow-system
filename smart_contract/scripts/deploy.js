@@ -1,20 +1,27 @@
-const main = async()=>{
-    const Transactions = await hre.ethers.getContractFactory("Transactions");
-    const transactions = await Transactions.deploy();
+const hre = require("hardhat");
+const fs = require("fs");
 
-    await transactions.deployed();
+async function main() {
+  console.log("🚀 Deploying EscrowUPI...");
 
-    console.log("Transactions deployed to: ", transactions.address);
+  const EscrowUPI = await hre.ethers.getContractFactory("EscrowUPI");
+  const escrow = await EscrowUPI.deploy();
+
+  // Wait for deployment to be mined
+  await escrow.waitForDeployment();
+
+  const contractAddress = await escrow.getAddress();
+  console.log("✅ EscrowUPI deployed at:", contractAddress);
+
+  // Save deployment info for backend
+  const data = {
+    address: contractAddress,
+    network: hre.network.name,
+  };
+  fs.writeFileSync("deployedAddress.json", JSON.stringify(data, null, 2));
 }
 
-const runMain = async()=>{
-    try{
-        await main();
-        process.exit(0);
-    }catch(error){
-        console.error(error);
-        process.exit(1);
-    }
-}
-
-runMain();
+main().catch((error) => {
+  console.error("❌ Deployment error:", error);
+  process.exit(1);
+});

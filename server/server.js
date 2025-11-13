@@ -8,9 +8,8 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/user", require("./Routes/userAuthentication"));   
-app.use("/products", require("./Routes/getUserProduct"));  
-app.use("/products", require("./Routes/registerProduct"));  
-app.use("/products", require("./Routes/getProducts"));
+app.use("/products", require("./Routes/products")); 
+app.use("/api/escrow", require('./Routes/blockchain'));
 
 
 app.listen(process.env.PORT, () => {

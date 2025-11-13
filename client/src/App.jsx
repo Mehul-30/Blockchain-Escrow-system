@@ -4,6 +4,7 @@ import BuyPage from "./Components/BuyPage";
 import UserProfile from "./Components/UserProfile";
 import SellProductPage from "./Components/SellProductPage";
 import UserAuthentication from "./Components/UserAuthentication";
+import CreateEscrow from "./Components/CreateEscrow";
 
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -21,12 +22,13 @@ const App = () => {
           <Link to="/buyProducts" style={{ marginRight: "20px" }}>Buy</Link>
 
           {isLoggedIn ? (
-            <Link to="/userProfile">Profile</Link>
+            <Link to="/userProfile" style={{ marginRight: "20px" }}>Profile</Link>
           ) : (
             <>
               <Link to="/userAuth" style={{ marginRight: "20px" }}>Register/Login</Link>
             </>
           )}
+          {/* <Link to="/createEscrow" style={{ marginRight: "20px" }}>createEscrow</Link> */}
         </div>
 
         <hr />
@@ -36,7 +38,9 @@ const App = () => {
           <Route path="/buyProducts" element={<BuyPage />} />
           <Route path="/userProfile" element={<UserProfile />} />
           <Route path="/userAuth" element={<UserAuthentication setIsLoggedIn={setIsLoggedIn} />} />
+          <Route path="/createEscrow" element={<CreateEscrow />} />
         </Routes>
+        
       </div>
     </Router>
   );

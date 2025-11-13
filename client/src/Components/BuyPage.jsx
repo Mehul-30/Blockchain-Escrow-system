@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+
 import axios from 'axios'
 
 const BuyPage = () => {
   const [games, setGames] = useState([]);
-  const [selectedGame, setSelectedGame] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchGames = async () => {
@@ -24,14 +26,45 @@ const BuyPage = () => {
     fetchGames();
   }, []);
 
-  const orderSummaryRef = useRef(null);
+  const connectWallet = async () => {
+    if (!window.ethereum) {
+      alert("MetaMask is not installed. Please install it.");
+      return null;
+    }
 
-  const handleOrder = (game) => {
-    setSelectedGame(game);
+    try {
+      // Check existing accounts
+      const accounts = await window.ethereum.request({
+        method: "eth_accounts",
+      });
 
-    setTimeout(() => {
-      orderSummaryRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
+      if (accounts.length > 0) {
+        // Already connected
+        console.log("Already connected:", accounts[0]);
+        return accounts[0];
+      }
+
+      // Not connected → request connection
+      const newAccounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
+
+      console.log("Connected:", newAccounts[0]);
+      return newAccounts[0];
+
+    } catch (err) {
+      console.error("MetaMask connection error:", err);
+      return null;
+    }
+  };
+
+  const handleOrder = async (game) => {
+    
+    const account = await connectWallet();
+
+    if (!account) return;
+
+    navigate("/createEscrow", { state: { game, account } });
   };
 
   return (
@@ -49,17 +82,6 @@ const BuyPage = () => {
           </div>
         ))}
       </div>
-
-      {selectedGame && (
-        <div ref={orderSummaryRef} className="order-summary">
-          <h3>Order Summary</h3>
-          <p><b>Game:</b> {selectedGame.name}</p>
-          <p><b>Price:</b> ₹{selectedGame.price}</p>
-          <button onClick={() => alert("Proceed to payment (TODO)")}>
-            Proceed to Pay
-          </button>
-        </div>
-      )}
     </div>
   );
 };

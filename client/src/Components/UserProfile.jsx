@@ -54,14 +54,25 @@ const UserProfile = ({ setIsLoggedIn }) => {
 
       <h3>Your Products</h3>
       {userProducts.length > 0 ? (
-        userProducts.map((p) => (
-          <div key={p.id}>
-            <h4>{p.productName}</h4>
-            <p>Product ID: {p.id}</p>
-            <p>Price: ₹{p.price}</p>
-            <p>Wallet: {p.walletAddress || "N/A"}</p>
-          </div>
-        ))
+        <div className="Product-list">
+          {userProducts.map((Product) => (
+            <div
+              key={Product.id}
+              // style={{
+              //   padding: "16px",
+              //   border: "1px solid #e0e0e0",
+              //   borderRadius: "8px",
+              //   boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+              //   marginBottom: "16px"
+              // }}
+            >
+              <h3>{Product.name}</h3>
+              <p>Product ID: {Product.id}</p>
+              <p>Price: ₹{Product.price}</p>
+              <p>Wallet: {Product.walletAddress || "N/A"}</p>
+            </div>
+          ))}
+        </div>
       ) : (
         <p>No products listed yet.</p>
       )}

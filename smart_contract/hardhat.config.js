@@ -1,12 +1,17 @@
-require('dotenv').config()
-require('@nomiclabs/hardhat-waffle')
+require("@nomicfoundation/hardhat-toolbox");
+require("dotenv").config();
+
+const { RPC_URL, PRIVATE_KEY, ETHERSCAN_API_KEY } = process.env;
 
 module.exports = {
-  solidity: '0.8.0',
+  solidity: "0.8.19",
   networks: {
     sepolia: {
-      url: process.env.ALCHEMY_API,
-      accounts: [process.env.META_MASK_ACC1_PVT],
-    }
-  }
+      url: RPC_URL,
+      accounts: [PRIVATE_KEY],
+    },
+  },
+  etherscan: {
+    apiKey: ETHERSCAN_API_KEY,
+  },
 };
