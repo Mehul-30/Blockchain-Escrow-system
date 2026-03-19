@@ -1,27 +1,38 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
+import { useLocation } from "react-router-dom";
 import { BACKEND_URL, CONTRACT_ADDRESS } from "../Config/config";
 import EscrowABI from "../../../smart_contract/artifacts/contracts/EscortContract.sol/EscrowUPI.json";
 
 const CreateEscrow = () => {
+  const location = useLocation();
+
+  const game = location.state?.game;
+
   const [seller, setSeller] = useState("");
   const [amount, setAmount] = useState("");
 
+  useEffect(() => {
+    if (game) {
+      setSeller(game.owner);   
+      setAmount(game.price);  
+    }
+  }, [game]);
+
   const handleCreate = async () => {
     if (!window.ethereum) return alert("Install MetaMask first!");
-    if (!seller || !amount) return alert("Enter all fields");
+    if (!seller || !amount) return alert("Missing product data");
 
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
-      const buyer = await signer.getAddress(); 
-      
-      
+      const buyer = await signer.getAddress();
+
       const token = localStorage.getItem("token");
       if (!token) {
-        alert("You must be logged in to list a product!");
+        alert("Login required!");
         return;
       }
 
@@ -34,17 +45,18 @@ const CreateEscrow = () => {
         signer
       );
 
-      // Create escrow on-chain
+      if (!ethers.isAddress(seller)) {
+        return alert("Invalid seller address");
+      }
+
       const tx = await contract.createEscrow(seller, {
-        value: ethers.parseEther(amount),
+        value: ethers.parseEther(amount.toString()),
       });
 
       const receipt = await tx.wait();
 
-      console.log("Escrow Created:", receipt);
       alert("Escrow created successfully!");
 
-      // Proper event extraction
       let escrowId = null;
       const iface = new ethers.Interface(EscrowABI.abi);
 
@@ -58,20 +70,17 @@ const CreateEscrow = () => {
         } catch {}
       }
 
-      console.log("Escrow ID:", escrowId);
+      if (!escrowId) return alert("Escrow ID not found!");
 
-      if (!escrowId) return alert("Could not extract escrowId from blockchain!");
-
-      // Save escrow details to backend
-      const store = await axios.post(`${BACKEND_URL}/create`, {
-        buyer,        
+      await axios.post(`${BACKEND_URL}/create`, {
+        buyer,
         seller,
         amountEth: amount,
         escrowId,
         userId,
       });
 
-      console.log("Saved to backend:", store.data);
+      console.log("Saved to backend");
 
     } catch (err) {
       console.error(err);
@@ -81,23 +90,13 @@ const CreateEscrow = () => {
 
   return (
     <div>
-      <h3>Place Order By Creating Escrow</h3>
+      <h3>Create Escrow</h3>
 
-      <input
-        type="text"
-        placeholder="Seller Address"
-        value={seller}
-        onChange={(e) => setSeller(e.target.value)}
-      />
+      <input type="text" value={seller} readOnly />
 
-      <input
-        type="number"
-        placeholder="Amount (ETH)"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-      />
+      <input type="text" value={amount} readOnly />
 
-      <button onClick={handleCreate}>Create Escrow</button>
+      <button onClick={handleCreate}>Confirm & Pay</button>
     </div>
   );
 };

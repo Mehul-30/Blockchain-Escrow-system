@@ -10,7 +10,7 @@ const BuyPage = () => {
   useEffect(() => {
     const fetchGames = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/products");
+        const res = await axios.get("http://localhost:5123/products");
         const formattedGames = res.data.map((item) => ({
           id: item.id,
           name: item.productName,

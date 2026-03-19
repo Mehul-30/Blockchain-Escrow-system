@@ -21,7 +21,7 @@ const UserAuthentication = ({ setIsLoggedIn }) => {
         ? { email: identifier, password }
         : { username: identifier, password };
 
-      const res = await axios.post("http://localhost:5000/user/login", payload);
+      const res = await axios.post("http://localhost:5123/user/login", payload);
 
       localStorage.setItem("token", res.data.token);
       setIsLoggedIn(true);
@@ -41,7 +41,7 @@ const UserAuthentication = ({ setIsLoggedIn }) => {
         return;
       }
 
-      const res = await axios.post("http://localhost:5000/user/register", {
+      const res = await axios.post("http://localhost:5123/user/register", {
         username,
         email: identifier,
         password,

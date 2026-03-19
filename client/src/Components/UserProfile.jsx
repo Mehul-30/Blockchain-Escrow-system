@@ -27,10 +27,10 @@ const UserProfile = ({ setIsLoggedIn }) => {
         const decoded = jwtDecode(token);
         const userId = decoded.id;
 
-        const userRes = await axios.get(`http://localhost:5000/user/${userId}`);
+        const userRes = await axios.get(`http://localhost:5123/user/${userId}`);
         setUser(userRes.data);
 
-        const productRes = await axios.get(`http://localhost:5000/products/user/${userId}`);
+        const productRes = await axios.get(`http://localhost:5123/products/user/${userId}`);
         setUserProducts(productRes.data);
       } catch (error) {
         console.error("Error fetching profile:", error);

@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 
-
 const SellProductPage = () => {
   const [formData, setFormData] = useState({
     productName: "",
@@ -10,6 +9,7 @@ const SellProductPage = () => {
     password: "",
     price: "",
     walletAddress: "",
+    accountType: "OAuth",
   });
 
   const handleChange = (e) => {
@@ -21,7 +21,6 @@ const SellProductPage = () => {
     console.log("Registering Product!:", formData);
 
     try {
-
       const token = localStorage.getItem("token");
       if (!token) {
         alert("You must be logged in to list a product!");
@@ -33,7 +32,10 @@ const SellProductPage = () => {
 
       const productData = { ...formData, user_id: userId };
 
-      const res = await axios.post("http://localhost:5000/products/sellproduct", productData);
+      const res = await axios.post(
+        "http://localhost:5123/products/sellproduct",
+        productData
+      );
 
       alert(res.data.message || "Product registered successfully!");
     } catch (error) {
@@ -43,14 +45,12 @@ const SellProductPage = () => {
         if (error.response.status === 409) {
           alert("Product already exists!");
         } else if (error.response.status === 500) {
-          alert("Server error while saving product. Please try again later.");
+          alert("Server error while saving product.");
         } else {
-          alert(`Error: ${error.response.data.message || "Unexpected error"}`);
+          alert(error.response.data.message || "Unexpected error");
         }
-      } else if (error.request) {
-        alert("No response from server. Check your connection.");
       } else {
-        alert("Sorry! Failed to send request.");
+        alert("Failed to send request.");
       }
     }
   };
@@ -58,7 +58,9 @@ const SellProductPage = () => {
   return (
     <div className="register-container">
       <h2>Register Product</h2>
+
       <form onSubmit={handleSubmit} className="register-form">
+        
         <label>
           Product Name:
           <input
@@ -70,13 +72,42 @@ const SellProductPage = () => {
           />
         </label>
 
+        <label>Account Type:</label>
+
         <label>
-          credentialId:
           <input
-            type="string"
+            type="radio"
+            name="accountType"
+            value="OAuth"
+            checked={formData.accountType === "OAuth"}
+            onChange={handleChange}
+          />
+          Email Account
+        </label>
+
+        <label>
+          <input
+            type="radio"
+            name="accountType"
+            value="otp"
+            checked={formData.accountType === "otp"}
+            onChange={handleChange}
+          />
+          OTP Based Account
+        </label>
+
+        <label>
+          {formData.accountType === "OAuth" ? "Email ID:" : "Phone Number:"}
+          <input
+            type="text"
             name="credentialId"
             value={formData.credentialId}
             onChange={handleChange}
+            placeholder={
+              formData.accountType === "OAuth"
+                ? "Enter email"
+                : "Enter phone number"
+            }
             required
           />
         </label>

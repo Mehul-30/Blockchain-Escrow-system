@@ -14,10 +14,23 @@ exports.getProducts = async (req, res, next) => {
 
 // To register products
 
-exports.registerProduct = async (req,res,next)=>{
-    const { user_id, productName, credentialId, password, price, walletAddress } = req.body;
+exports.registerProduct = async (req, res, next) => {
+  const {
+    user_id,
+    productName,
+    credentialId,
+    password,
+    price,
+    walletAddress,
+    accountType, 
+  } = req.body;
 
-    try {
+  try {
+    const validTypes = ["OAuth", "otp"];
+    if (!validTypes.includes(accountType)) {
+      return res.status(400).json({ message: "Invalid account type" });
+    }
+
     const [existing] = await db.execute(
       "SELECT * FROM products WHERE productName = ? AND credentialId = ?",
       [productName, credentialId]
@@ -27,27 +40,41 @@ exports.registerProduct = async (req,res,next)=>{
       return res.status(409).json({ message: "Product already present" });
     }
 
+    let storedPassword = password;
+
+    if (accountType === "otp") {
+      storedPassword = password || null;
+    }
+
     const sql = `
-      INSERT INTO products (user_id, productName, credentialId, password, price, walletAddress)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO products 
+      (user_id, productName, credentialId, password, price, walletAddress, accountType)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
 
     const [result] = await db.execute(sql, [
       user_id,
       productName,
       credentialId,
-      password,
+      storedPassword,
       price,
       walletAddress,
+      accountType,
     ]);
 
-    res.status(200).json({ message: "Product registered!", id: result.insertId });
+    res.status(200).json({
+      message: "Product registered!",
+      id: result.insertId,
+    });
 
   } catch (error) {
     console.error("Error inserting data:", error);
-    res.status(500).json({ message: "Database error", error: error.message });
+    res.status(500).json({
+      message: "Database error",
+      error: error.message,
+    });
   }
-}
+};
 
 // To get products for users
 
