@@ -1,22 +1,23 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-
-import axios from 'axios'
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 
 const BuyPage = () => {
   const [games, setGames] = useState([]);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchGames = async () => {
       try {
         const res = await axios.get("http://localhost:5123/products");
+
         const formattedGames = res.data.map((item) => ({
           id: item.id,
           name: item.productName,
           price: item.price,
           owner: item.walletAddress,
+          seller_id: item.user_id, 
         }));
+
         setGames(formattedGames);
       } catch (err) {
         console.error("Error fetching games:", err);
@@ -28,43 +29,47 @@ const BuyPage = () => {
 
   const connectWallet = async () => {
     if (!window.ethereum) {
-      alert("MetaMask is not installed. Please install it.");
+      alert("MetaMask is not installed.");
       return null;
     }
 
     try {
-      // Check existing accounts
       const accounts = await window.ethereum.request({
-        method: "eth_accounts",
-      });
-
-      if (accounts.length > 0) {
-        // Already connected
-        console.log("Already connected:", accounts[0]);
-        return accounts[0];
-      }
-
-      // Not connected → request connection
-      const newAccounts = await window.ethereum.request({
         method: "eth_requestAccounts",
       });
 
-      console.log("Connected:", newAccounts[0]);
-      return newAccounts[0];
+      return accounts[0];
 
     } catch (err) {
-      console.error("MetaMask connection error:", err);
+      console.error("Wallet connection error:", err);
       return null;
     }
   };
 
+  // 🔥 FIXED: send request instead of navigating
   const handleOrder = async (game) => {
-    
-    const account = await connectWallet();
+    try {
+      const account = await connectWallet();
+      if (!account) return;
 
-    if (!account) return;
+      const token = localStorage.getItem("token");
+      if (!token) return alert("Login first");
 
-    navigate("/createEscrow", { state: { game, account } });
+      const decoded = jwtDecode(token);
+      const buyer_id = decoded.id;
+
+      await axios.post("http://localhost:5123/purchase/create", {
+        product_id: game.id,
+        buyer_id,
+        seller_id: game.seller_id, 
+      });
+
+      alert("Purchase request sent to seller!");
+
+    } catch (err) {
+      console.error(err);
+      alert("Error sending request");
+    }
   };
 
   return (
@@ -78,7 +83,10 @@ const BuyPage = () => {
             <p>Game ID: {game.id}</p>
             <p>Owner: {game.owner}</p>
             <p>Price: ₹{game.price}</p>
-            <button onClick={() => handleOrder(game)}>Buy Now</button>
+
+            <button onClick={() => handleOrder(game)}>
+              Buy Now
+            </button>
           </div>
         ))}
       </div>

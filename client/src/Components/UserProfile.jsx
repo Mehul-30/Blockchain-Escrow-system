@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 const UserProfile = ({ setIsLoggedIn }) => {
   const [user, setUser] = useState(null);
   const [userProducts, setUserProducts] = useState([]);
+  const [requests, setRequests] = useState([]); 
+
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -13,6 +15,23 @@ const UserProfile = ({ setIsLoggedIn }) => {
     if (setIsLoggedIn) setIsLoggedIn(false);
     alert("You have been logged out.");
     navigate("/userAuth");
+  };
+
+  // APPROVE REQUEST
+  const handleApprove = async (requestId) => {
+    try {
+      await axios.post("http://localhost:5123/purchase/approve", {
+        requestId,
+      });
+
+      alert("Approved!");
+
+      // remove approved request from UI
+      setRequests((prev) => prev.filter((r) => r.id !== requestId));
+
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   useEffect(() => {
@@ -27,11 +46,22 @@ const UserProfile = ({ setIsLoggedIn }) => {
         const decoded = jwtDecode(token);
         const userId = decoded.id;
 
+        // user info
         const userRes = await axios.get(`http://localhost:5123/user/${userId}`);
         setUser(userRes.data);
 
-        const productRes = await axios.get(`http://localhost:5123/products/user/${userId}`);
+        // products
+        const productRes = await axios.get(
+          `http://localhost:5123/products/user/${userId}`
+        );
         setUserProducts(productRes.data);
+
+        // FETCH PURCHASE REQUESTS (IMPORTANT)
+        const requestRes = await axios.get(
+          `http://localhost:5123/purchase/seller/${userId}`
+        );
+        setRequests(requestRes.data);
+
       } catch (error) {
         console.error("Error fetching profile:", error);
       }
@@ -52,20 +82,12 @@ const UserProfile = ({ setIsLoggedIn }) => {
 
       <hr />
 
+      {/* PRODUCTS */}
       <h3>Your Products</h3>
       {userProducts.length > 0 ? (
         <div className="Product-list">
           {userProducts.map((Product) => (
-            <div
-              key={Product.id}
-              // style={{
-              //   padding: "16px",
-              //   border: "1px solid #e0e0e0",
-              //   borderRadius: "8px",
-              //   boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
-              //   marginBottom: "16px"
-              // }}
-            >
+            <div key={Product.id}>
               <h3>{Product.name}</h3>
               <p>Product ID: {Product.id}</p>
               <p>Price: ₹{Product.price}</p>
@@ -75,6 +97,35 @@ const UserProfile = ({ setIsLoggedIn }) => {
         </div>
       ) : (
         <p>No products listed yet.</p>
+      )}
+
+      <hr />
+
+      {/* NEW SECTION: PURCHASE REQUESTS */}
+      <h3>Purchase Requests</h3>
+
+      {requests.length > 0 ? (
+        <div>
+          {requests.map((req) => (
+            <div
+              key={req.id}
+              style={{
+                border: "1px solid #ccc",
+                padding: "10px",
+                marginBottom: "10px",
+              }}
+            >
+              <p>Request ID: {req.id}</p>
+              <p>Product ID: {req.product_id}</p>
+
+              <button onClick={() => handleApprove(req.id)}>
+                Approve
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p>No pending requests</p>
       )}
     </div>
   );

@@ -5,6 +5,7 @@ import UserProfile from "./Components/UserProfile";
 import SellProductPage from "./Components/SellProductPage";
 import UserAuthentication from "./Components/UserAuthentication";
 import CreateEscrow from "./Components/CreateEscrow";
+import NotificationListener from "./Components/NotificationListener"; 
 
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -16,6 +17,8 @@ const App = () => {
 
   return (
     <Router>
+      <NotificationListener /> 
+
       <div style={{ padding: "20px" }}>
         <div>
           <Link to="/sellProduct" style={{ marginRight: "20px" }}>Sell</Link>
@@ -24,11 +27,10 @@ const App = () => {
           {isLoggedIn ? (
             <Link to="/userProfile" style={{ marginRight: "20px" }}>Profile</Link>
           ) : (
-            <>
-              <Link to="/userAuth" style={{ marginRight: "20px" }}>Register/Login</Link>
-            </>
+            <Link to="/userAuth" style={{ marginRight: "20px" }}>
+              Register/Login
+            </Link>
           )}
-          {/* <Link to="/createEscrow" style={{ marginRight: "20px" }}>createEscrow</Link> */}
         </div>
 
         <hr />
@@ -40,7 +42,6 @@ const App = () => {
           <Route path="/userAuth" element={<UserAuthentication setIsLoggedIn={setIsLoggedIn} />} />
           <Route path="/createEscrow" element={<CreateEscrow />} />
         </Routes>
-        
       </div>
     </Router>
   );
