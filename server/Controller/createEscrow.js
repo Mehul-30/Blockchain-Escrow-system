@@ -2,12 +2,12 @@ const { contract, ethers } = require("../Config/blockchain");
 const  pool  = require("../Config/connectToSQL");
 
 exports.createEscrow = async (req, res, next) => {
-  const { buyer, seller, amountEth, escrowId, userId } = req.body;
+  const { buyer, seller, amountEth, escrowId, product_id } = req.body;
 
   try {
     await pool.execute(
-      "INSERT INTO escrows (escrow_id_onchain, buyer_address, seller_address, amount_eth, status, user_id) VALUES (?, ?, ?, ?, ?, ?)",
-      [escrowId, buyer, seller, amountEth, "Pending", userId]
+      "INSERT INTO escrows (escrow_id_onchain, buyer_address, seller_address, amount_eth, status, product_id) VALUES (?, ?, ?, ?, ?, ?)",
+      [escrowId, buyer, seller, amountEth, "Pending", product_id]
     );
     res.send({ success: true, message: "Escrow stored off-chain" });
   } catch (err) {

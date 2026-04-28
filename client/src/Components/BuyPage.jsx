@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import { BACKEND_URL } from "../Config/config";
 
 const BuyPage = () => {
   const [games, setGames] = useState([]);
@@ -8,7 +9,7 @@ const BuyPage = () => {
   useEffect(() => {
     const fetchGames = async () => {
       try {
-        const res = await axios.get("http://localhost:5123/products");
+        const res = await axios.get(`${BACKEND_URL}/products`);
 
         const formattedGames = res.data.map((item) => ({
           id: item.id,
@@ -58,7 +59,7 @@ const BuyPage = () => {
       const decoded = jwtDecode(token);
       const buyer_id = decoded.id;
 
-      await axios.post("http://localhost:5123/purchase/create", {
+      await axios.post(`${BACKEND_URL}/purchase/create`, {
         product_id: game.id,
         buyer_id,
         seller_id: game.seller_id, 

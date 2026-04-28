@@ -1,7 +1,7 @@
 
 import { io } from "socket.io-client";
-
-const socket = io("http://localhost:5123", {
+import { BACKEND_URL } from "./config";
+const socket = io(`${BACKEND_URL}`, {
   transports: ["websocket"], // avoids polling issues
 });
 

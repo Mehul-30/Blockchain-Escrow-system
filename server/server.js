@@ -17,7 +17,7 @@ initSocket(server);
 app.use("/purchase", require("./Routes/purchaseNotifier"));
 app.use("/user", require("./Routes/userAuthentication"));   
 app.use("/products", require("./Routes/products")); 
-app.use("/api/escrow", require('./Routes/blockchain'));
+app.use("/escrow", require('./Routes/blockchain'));
 
 // test route
 app.get("/test", async (req, res) => {
@@ -26,5 +26,5 @@ app.get("/test", async (req, res) => {
 });
 
 server.listen(process.env.PORT, () => {
-  console.log(`Server running at http://localhost:${process.env.PORT}`);
+  console.log(`Server running at http://0.0.0.0:${process.env.PORT}`);
 });

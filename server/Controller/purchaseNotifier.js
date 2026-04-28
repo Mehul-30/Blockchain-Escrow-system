@@ -18,7 +18,7 @@ exports.createRequest = async (req, res) => {
       requestId: result.insertId,
     });
 
-    res.json({ requestId: result.insertId });
+    res.json({ requestId: result.insertId });1
 
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -45,6 +45,7 @@ exports.sellerApprove = async (req, res) => {
     io.to(request.buyer_id.toString()).emit("notification", {
       message: "Seller approved. Confirm purchase.",
       requestId,
+
     });
 
     res.json({ message: "Approved" });
@@ -59,33 +60,53 @@ exports.buyerConfirm = async (req, res) => {
   const { requestId } = req.body;
 
   try {
-    await db.execute(
-      "UPDATE purchase_requests SET status='buyer_confirmed' WHERE id=?",
-      [requestId]
-    );
-
+    // 1. Get request
     const [[request]] = await db.execute(
       "SELECT * FROM purchase_requests WHERE id=?",
       [requestId]
     );
 
+    if (!request) {
+      return res.status(400).json({ message: "Invalid request" });
+    }
+
+    // 2. Check status
+    if (request.status !== "seller_approved") {
+      return res.status(400).json({
+        message: "Seller has not approved yet OR already confirmed",
+      });
+    }
+
+    // 3. Update status
+    await db.execute(
+      "UPDATE purchase_requests SET status='buyer_confirmed' WHERE id=?",
+      [requestId]
+    );
+
+    // 4. Get product
     const [[product]] = await db.execute(
       "SELECT * FROM products WHERE id=?",
       [request.product_id]
     );
 
+    if (!product) {
+      return res.status(400).json({ message: "Product not found" });
+    }
+
+    // 5. Emit escrow creation event
     const io = getIO();
 
-    // send event to buyer frontend
     io.to(request.buyer_id.toString()).emit("createEscrow", {
       seller: product.walletAddress,
-      amount: product.price,
+      amount: product.price.toString(),
+      product_id: product.id,
       requestId,
+      
     });
-
-    res.json({ message: "Escrow triggered" });
+    res.json({ message: "Escrow triggered successfully" });
 
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -100,4 +121,3 @@ exports.getSeller = async (req, res) => {
 
   res.json(rows);
 };
-

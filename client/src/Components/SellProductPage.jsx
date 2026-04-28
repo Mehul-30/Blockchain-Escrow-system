@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
+import { BACKEND_URL } from "../Config/config";
 
 const SellProductPage = () => {
   const [formData, setFormData] = useState({
@@ -18,7 +19,6 @@ const SellProductPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Registering Product!:", formData);
 
     try {
       const token = localStorage.getItem("token");
@@ -33,7 +33,7 @@ const SellProductPage = () => {
       const productData = { ...formData, user_id: userId };
 
       const res = await axios.post(
-        "http://localhost:5123/products/sellproduct",
+        `${BACKEND_URL}/products/sellproduct`,
         productData
       );
 

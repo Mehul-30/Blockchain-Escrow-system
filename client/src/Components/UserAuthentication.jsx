@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { BACKEND_URL } from "../Config/config";
 
 const UserAuthentication = ({ setIsLoggedIn }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -21,7 +22,7 @@ const UserAuthentication = ({ setIsLoggedIn }) => {
         ? { email: identifier, password }
         : { username: identifier, password };
 
-      const res = await axios.post("http://localhost:5123/user/login", payload);
+      const res = await axios.post(`${BACKEND_URL}/user/login`, payload);
 
       localStorage.setItem("token", res.data.token);
       setIsLoggedIn(true);
@@ -41,7 +42,7 @@ const UserAuthentication = ({ setIsLoggedIn }) => {
         return;
       }
 
-      const res = await axios.post("http://localhost:5123/user/register", {
+      const res = await axios.post(`${BACKEND_URL}/user/register`, {
         username,
         email: identifier,
         password,

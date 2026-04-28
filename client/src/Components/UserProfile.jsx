@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
+import { BACKEND_URL } from "../Config/config";
 
 const UserProfile = ({ setIsLoggedIn }) => {
   const [user, setUser] = useState(null);
@@ -17,10 +18,38 @@ const UserProfile = ({ setIsLoggedIn }) => {
     navigate("/userAuth");
   };
 
+    const releasePayment = async (escrowId) => {
+    try {
+      if (!window.ethereum) return alert("Install MetaMask");
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+
+      const contract = new ethers.Contract(
+        CONTRACT_ADDRESS,
+        EscrowABI.abi,
+        signer
+      );
+
+      const tx = await contract.releasePayment(escrowId);
+      await tx.wait();
+
+      alert("Payment released ✅");
+
+      await axios.post(`${BACKEND_URL}/escrow/release`, {
+        escrowId,
+      });
+
+    } catch (err) {
+      console.error(err);
+      alert("Release failed");
+    }
+  };
+
   // APPROVE REQUEST
   const handleApprove = async (requestId) => {
     try {
-      await axios.post("http://localhost:5123/purchase/approve", {
+      await axios.post(`${BACKEND_URL}/purchase/approve`, {
         requestId,
       });
 
@@ -47,18 +76,18 @@ const UserProfile = ({ setIsLoggedIn }) => {
         const userId = decoded.id;
 
         // user info
-        const userRes = await axios.get(`http://localhost:5123/user/${userId}`);
+        const userRes = await axios.get(`${BACKEND_URL}/user/${userId}`);
         setUser(userRes.data);
 
         // products
         const productRes = await axios.get(
-          `http://localhost:5123/products/user/${userId}`
+          `${BACKEND_URL}/products/user/${userId}`
         );
         setUserProducts(productRes.data);
 
         // FETCH PURCHASE REQUESTS (IMPORTANT)
         const requestRes = await axios.get(
-          `http://localhost:5123/purchase/seller/${userId}`
+          `${BACKEND_URL}/purchase/seller/${userId}`
         );
         setRequests(requestRes.data);
 

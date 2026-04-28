@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import socket from "../Config/socket";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
@@ -9,6 +9,7 @@ import { BACKEND_URL, CONTRACT_ADDRESS } from "../Config/config";
 
 const NotificationListener = () => {
   const navigate = useNavigate();
+  const processingRef = useRef(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -16,40 +17,68 @@ const NotificationListener = () => {
 
     const userId = jwtDecode(token).id;
 
-    // join socket room
-    socket.emit("join", userId);
+    // ✅ Join room
+    console.log("Joining room:", userId);
+    socket.emit("join", userId.toString());
 
-    // Handle normal notifications
-    socket.on("notification", (data) => {
-      console.log("Notification:", data);
+    // =========================
+    // 🔔 Purchase Notification
+    // =========================
+    socket.off("notification").on("notification", (data) => {
+      console.log("Notification received:", data);
 
-      // If seller approved → redirect buyer
       if (data.requestId) {
-        const go = window.confirm(
-          data.message + "\n\nClick OK to confirm purchase."
-        );
-
-        if (go) {
-          navigate("/createEscrow", {
-            state: { requestId: data.requestId },
-          });
-        }
+        navigate("/createEscrow", {
+          state: { requestId: data.requestId },
+        });
       } else {
         alert(data.message);
       }
     });
 
-    // Escrow trigger (ONLY place escrow is created)
-    socket.on("createEscrow", async (data) => {
+    // =========================
+    // 🔐 Credentials Received
+    // =========================
+    socket.off("credentials").on("credentials", (data) => {
+      console.log("🔥 RECEIVED CREDENTIALS:", data);
+
+      if (!data || !data.credentials) {
+        console.error("Invalid credentials data");
+        return;
+      }
+
+      navigate("/credentials", {
+        state: {
+          escrowId: data.escrowId,
+          credentials: data.credentials,
+        },
+        replace: true, 
+      });
+    });
+
+    socket.off("createEscrow").on("createEscrow", async (data) => {
+      if (processingRef.current) return;
+      processingRef.current = true;
+
       try {
+        console.log("CreateEscrow event:", data);
+
         if (!window.ethereum) {
           alert("Install MetaMask!");
           return;
         }
 
         const provider = new ethers.BrowserProvider(window.ethereum);
+
+        await provider.send("eth_requestAccounts", []);
         const signer = await provider.getSigner();
         const buyer = await signer.getAddress();
+
+        const network = await provider.getNetwork();
+        if (network.chainId !== 31337n) {
+          alert("Switch to localhost network");
+          return;
+        }
 
         const contract = new ethers.Contract(
           CONTRACT_ADDRESS,
@@ -57,53 +86,62 @@ const NotificationListener = () => {
           signer
         );
 
-        // create escrow on blockchain
+        if (!data.amount || Number(data.amount) <= 0) {
+          alert("Invalid amount");
+          return;
+        }
+
         const tx = await contract.createEscrow(data.seller, {
           value: ethers.parseEther(data.amount.toString()),
         });
 
+        alert("Transaction sent...");
         const receipt = await tx.wait();
 
-        // extract escrowId from event
         let escrowId = null;
         const iface = new ethers.Interface(EscrowABI.abi);
 
         for (const log of receipt.logs) {
+          if (log.address.toLowerCase() !== CONTRACT_ADDRESS.toLowerCase())
+            continue;
+
           try {
             const parsed = iface.parseLog(log);
-            if (parsed.name === "EscrowCreated") {
-              escrowId = parsed.args.escrowId.toString();
+            if (parsed && parsed.name === "EscrowCreated") {
+              escrowId = parsed.args[0].toString();
               break;
             }
           } catch {}
         }
 
-        if (!escrowId) {
-          alert("Escrow ID not found!");
-          return;
-        }
+        if (!escrowId) throw new Error("Escrow ID not found");
 
-        // store escrow in backend
-        await axios.post(`${BACKEND_URL}/api/escrow/store`, {
+        // Store in backend
+        await axios.post(`${BACKEND_URL}/escrow/store`, {
           escrowId,
           buyer,
           seller: data.seller,
           amountEth: data.amount,
-          userId,
+          product_id: data.product_id || null,
         });
 
-        alert("Escrow created successfully!");
+        console.log("Escrow stored successfully");
+        alert("Escrow created successfully");
 
       } catch (err) {
         console.error(err);
-        alert("Escrow creation failed");
+        alert(err.message || "Escrow creation failed");
+      } finally {
+        processingRef.current = false;
       }
     });
 
     return () => {
       socket.off("notification");
       socket.off("createEscrow");
+      socket.off("credentials");
     };
+
   }, [navigate]);
 
   return null;
