@@ -76,8 +76,6 @@ exports.registerProduct = async (req, res, next) => {
   }
 };
 
-// To get products for users
-
 exports.getProductsByUserId = async (req, res) => {
   try {
     const { userId } = req.params;

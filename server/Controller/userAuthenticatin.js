@@ -97,7 +97,7 @@ exports.getUserById = async (req, res) => {
     const { id } = req.params;
 
     const [rows] = await db.execute(
-      "SELECT id, username, email FROM users WHERE id = ?",
+      "SELECT id, username, email, roles FROM users WHERE id = ?",
       [id]
     );
 

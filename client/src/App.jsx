@@ -5,7 +5,6 @@ import UserProfile from "./Components/UserProfile";
 import SellProductPage from "./Components/SellProductPage";
 import UserAuthentication from "./Components/UserAuthentication";
 import CreateEscrow from "./Components/CreateEscrow";
-import NotificationListener from "./Components/NotificationListener"; 
 import CredentialsPage from "./Components/CredentialsPage";
 
 const App = () => {
@@ -18,12 +17,11 @@ const App = () => {
 
   return (
     <Router>
-      <NotificationListener /> 
-
       <div style={{ padding: "20px" }}>
         <div>
           <Link to="/sellProduct" style={{ marginRight: "20px" }}>Sell</Link>
           <Link to="/buyProducts" style={{ marginRight: "20px" }}>Buy</Link>
+          <Link to="/credentials" style={{ marginRight: "20px" }}>Purchased Products</Link>
 
           {isLoggedIn ? (
             <Link to="/userProfile" style={{ marginRight: "20px" }}>Profile</Link>

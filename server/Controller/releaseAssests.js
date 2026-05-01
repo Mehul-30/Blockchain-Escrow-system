@@ -1,78 +1,79 @@
-const pool = require("../Config/connectToSQL");
-const { getIO } = require("../Config/socket");
+const db = require("../Config/connectToSQL");
+const { ethers } = require("ethers");
+const EscrowABI = require("../../smart_contract/artifacts/contracts/EscortContract.sol/EscrowUPI.json");
+const provider = new ethers.JsonRpcProvider("http://127.0.0.1:8545");
+
+const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+
+const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
+
+const contract = new ethers.Contract(
+  CONTRACT_ADDRESS,
+  EscrowABI.abi,
+  signer
+);
 
 exports.releaseEscrow = async (req, res) => {
   const { escrowId } = req.body;
 
   try {
-    await pool.execute(
-      "UPDATE escrows SET status='completed' WHERE id=?",
-      [escrowId]
-    );
-
-  
-    const [[escrow]] = await pool.execute(
-      "SELECT * FROM escrows WHERE id=?",
-      [escrowId]
-    );
-
-    if (!escrow) {
-      return res.status(404).json({ message: "Escrow not found" });
+    if (!escrowId) {
+      return res.status(400).json({ error: "Escrow ID required" });
     }
 
-
-    const [rows] = await pool.execute(
-      "SELECT * FROM products WHERE id=?",
-      [escrow.product_id]
+    const [rows] = await db.query(
+      "SELECT * FROM escrows WHERE escrow_id=?",
+      [escrowId]
     );
 
     if (rows.length === 0) {
-      throw new Error("Product not found");
+      return res.status(404).json({ error: "Escrow not found" });
     }
 
-    const productDetails = rows[0];
-
-    const credentials = {
-      productName: productDetails.productName,
-      username: productDetails.credentialId,
-      password: productDetails.password,
-      price: productDetails.price
-    };
-
-    const [[user]] = await pool.execute(
-      
-    );
-
-    if (!user) {
-      throw new Error("Buyer not found");
+    const escrow = rows[0];
+    if (escrow.status === "released") {
+      return res.status(400).json({ error: "Already released" });
     }
 
-    const userId = user.id;
+    const tx = await contract.releasePayment(escrowId);
 
-    const io = getIO();
+    await tx.wait();
 
-    io.to(userId.toString()).emit("credentials", {
-      escrowId,
-      credentials,
-    });
-
-    const [admins] = await pool.execute(
-      "SELECT id FROM users WHERE role = 'admin'"
+    await db.query(
+      "UPDATE escrows SET status='released' WHERE escrow_id=?",
+      [escrowId]
     );
 
-    admins.forEach((admin) => {
-      io.to(admin.id.toString()).emit("adminNotification", {
-        message: `Escrow ${escrowId} released`,
-        escrowId,
-      });
-    });
 
     res.json({
-      message: "Payment released & notifications sent",
+      message: "Funds released successfully",
+      txHash: tx.hash,
     });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
+    console.error("RELEASE ERROR:", err);
+
+    res.status(500).json({
+      error: err.message || "Release failed",
+    });
   }
+};
+
+exports.getBuyerPurchasedProducts = async (req, res) => {
+  const userId = req.params.userId;
+
+  const [rows] = await db.query(`
+    SELECT DISTINCT 
+      p.id AS product_id,
+      p.productName,
+      p.credentialId,
+      p.password
+    FROM purchase_requests pr
+    JOIN escrows e ON pr.escrow_id = e.escrow_id
+    JOIN products p ON pr.product_id = p.id
+    WHERE pr.buyer_id = ?
+    AND e.status = 'released';
+  `, [userId]);
+
+  res.json(rows);
 };

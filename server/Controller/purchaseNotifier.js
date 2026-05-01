@@ -1,109 +1,18 @@
 const db = require("../Config/connectToSQL");
-const { getIO } = require("../Config/socket");
 
-// Buyer creates request
 exports.createRequest = async (req, res) => {
   const { product_id, buyer_id, seller_id } = req.body;
 
   try {
     const [result] = await db.execute(
-      "INSERT INTO purchase_requests (product_id, buyer_id, seller_id) VALUES (?, ?, ?)",
+      "INSERT INTO purchase_requests (product_id, buyer_id, seller_id, status) VALUES (?, ?, ?, 'pending')",
       [product_id, buyer_id, seller_id]
     );
 
-    const io = getIO();
-
-    io.to(seller_id.toString()).emit("notification", {
-      message: "New purchase request",
+    res.json({
+      message: "Request created successfully",
       requestId: result.insertId,
     });
-
-    res.json({ requestId: result.insertId });1
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// Seller approves
-exports.sellerApprove = async (req, res) => {
-  const { requestId } = req.body;
-
-  try {
-    await db.execute(
-      "UPDATE purchase_requests SET status='seller_approved' WHERE id=?",
-      [requestId]
-    );
-
-    const [[request]] = await db.execute(
-      "SELECT buyer_id FROM purchase_requests WHERE id=?",
-      [requestId]
-    );
-
-    const io = getIO();
-
-    io.to(request.buyer_id.toString()).emit("notification", {
-      message: "Seller approved. Confirm purchase.",
-      requestId,
-
-    });
-
-    res.json({ message: "Approved" });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// Buyer confirms → trigger escrow
-exports.buyerConfirm = async (req, res) => {
-  const { requestId } = req.body;
-
-  try {
-    // 1. Get request
-    const [[request]] = await db.execute(
-      "SELECT * FROM purchase_requests WHERE id=?",
-      [requestId]
-    );
-
-    if (!request) {
-      return res.status(400).json({ message: "Invalid request" });
-    }
-
-    // 2. Check status
-    if (request.status !== "seller_approved") {
-      return res.status(400).json({
-        message: "Seller has not approved yet OR already confirmed",
-      });
-    }
-
-    // 3. Update status
-    await db.execute(
-      "UPDATE purchase_requests SET status='buyer_confirmed' WHERE id=?",
-      [requestId]
-    );
-
-    // 4. Get product
-    const [[product]] = await db.execute(
-      "SELECT * FROM products WHERE id=?",
-      [request.product_id]
-    );
-
-    if (!product) {
-      return res.status(400).json({ message: "Product not found" });
-    }
-
-    // 5. Emit escrow creation event
-    const io = getIO();
-
-    io.to(request.buyer_id.toString()).emit("createEscrow", {
-      seller: product.walletAddress,
-      amount: product.price.toString(),
-      product_id: product.id,
-      requestId,
-      
-    });
-    res.json({ message: "Escrow triggered successfully" });
 
   } catch (err) {
     console.error(err);
@@ -111,13 +20,107 @@ exports.buyerConfirm = async (req, res) => {
   }
 };
 
-exports.getSeller = async (req, res) => {
-   const sellerId = req.params.id;
+exports.sellerApprove = async (req, res) => {
+  const { requestId } = req.body;
 
-  const [rows] = await db.execute(
-    "SELECT * FROM purchase_requests WHERE seller_id=? AND status='pending'",
-    [sellerId]
+  try {
+    await db.execute(
+      "UPDATE purchase_requests SET status='approved' WHERE id=?",
+      [requestId]
+    );
+
+    res.json({
+      message: "Request approved by seller",
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+exports.buyerConfirm = async (req, res) => {
+  const { requestId, escrowId, txHash } = req.body;
+
+  try {
+
+    await db.query(
+      `UPDATE purchase_requests 
+       SET status='confirmed', escrow_id=?, tx_hash=? 
+       WHERE id=?`,
+      [escrowId, txHash, requestId]
+    );
+
+    const [rows] = await db.query(
+      `SELECT * FROM purchase_requests WHERE id=?`,
+      [requestId]
+    );
+
+    const request = rows[0];
+
+    await db.query(
+      `INSERT INTO escrows 
+      (escrow_id, buyer_id, seller_id, product_id, amount, status)
+      VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        escrowId,
+        request.buyer_id,
+        request.seller_id,
+        request.product_id,
+        request.amount,
+        "locked",
+      ]
+    );
+
+    res.json({ message: "Escrow created and stored" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to confirm purchase" });
+  }
+  
+};
+
+
+exports.getSellerRequests = async (req, res) => {
+  const sellerId = req.params.id;
+
+  try {
+    const [rows] = await db.execute(
+      "SELECT * FROM purchase_requests WHERE seller_id=? AND status='pending'",
+      [sellerId]
+    );
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getBuyerRequests = async (req, res) => {
+  const buyerId = req.params.id;
+
+  try {
+    const [rows] = await db.execute(
+      "SELECT p.price as amount,walletAddress,pr.status,pr.id,pr.buyer_id,pr.product_id FROM purchase_requests pr JOIN products p ON pr.product_id = p.id WHERE pr.buyer_id = ?",
+      [buyerId]
+    );
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getPendingEscrows = async (req, res) => {
+  const [rows] = await db.query(
+    "SELECT * FROM escrows WHERE status='locked'"
   );
-
   res.json(rows);
 };
+

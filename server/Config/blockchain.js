@@ -9,6 +9,6 @@ const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
 const contract = new ethers.Contract(deployed.address, contractArtifact.abi, signer);
 
-console.log(`✅ Connected to Escrow contract at ${deployed.address} on ${deployed.network}`);
+console.log(`Connected to Escrow contract at ${deployed.address} on ${deployed.network}`);
 
 module.exports = { contract, provider, signer, ethers };

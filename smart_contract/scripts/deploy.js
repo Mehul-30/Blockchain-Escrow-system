@@ -11,7 +11,7 @@ async function main() {
   await escrow.waitForDeployment();
 
   const contractAddress = await escrow.getAddress();
-  console.log("✅ EscrowUPI deployed at:", contractAddress);
+  console.log("EscrowUPI deployed at:", contractAddress);
 
   // Save deployment info for backend
   const data = {
@@ -22,6 +22,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("❌ Deployment error:", error);
+  console.error("Deployment error:", error);
   process.exit(1);
 });
