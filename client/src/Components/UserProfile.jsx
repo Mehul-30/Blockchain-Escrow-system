@@ -270,13 +270,12 @@ const UserProfile = ({ setIsLoggedIn }) => {
                   marginBottom: "10px",
                 }}
               >
-                <p>Escrow ID: {e.escrow_id}</p>
+                <p>Escrow ID: {e.id}</p>
                 <p>Buyer: {e.buyer_id}</p>
-                <p>Amount: ₹{e.amount}</p>
                 <p>Status: {e.status}</p>
 
                 {e.status === "locked" && (
-                  <button onClick={() => handleRelease(e.escrow_id)}>
+                  <button onClick={() => handleRelease(e.id)}>
                     Release Funds
                   </button>
                 )}

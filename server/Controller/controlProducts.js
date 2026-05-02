@@ -1,7 +1,5 @@
 const db = require('../Config/connectToSQL');
 
-// To get all the products
-
 exports.getProducts = async (req, res, next) => {
   try {
     const [rows] = await db.execute("SELECT * FROM products WHERE status = 'available'");

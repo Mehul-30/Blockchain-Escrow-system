@@ -61,14 +61,13 @@ exports.buyerConfirm = async (req, res) => {
 
     await db.query(
       `INSERT INTO escrows 
-      (escrow_id, buyer_id, seller_id, product_id, amount, status)
-      VALUES (?, ?, ?, ?, ?, ?)`,
+      (escrow_id, buyer_id, seller_id, product_id, status)
+      VALUES (?, ?, ?, ?, ?)`,
       [
         escrowId,
         request.buyer_id,
         request.seller_id,
         request.product_id,
-        request.amount,
         "locked",
       ]
     );

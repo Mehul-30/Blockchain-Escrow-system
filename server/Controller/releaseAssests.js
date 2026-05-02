@@ -20,17 +20,18 @@ exports.releaseEscrow = async (req, res) => {
     if (!escrowId) {
       return res.status(400).json({ error: "Escrow ID required" });
     }
-
     const [rows] = await db.query(
-      "SELECT * FROM escrows WHERE escrow_id=?",
+      "SELECT * FROM escrows WHERE id=?",
       [escrowId]
     );
+
 
     if (rows.length === 0) {
       return res.status(404).json({ error: "Escrow not found" });
     }
 
     const escrow = rows[0];
+
     if (escrow.status === "released") {
       return res.status(400).json({ error: "Already released" });
     }
@@ -40,10 +41,9 @@ exports.releaseEscrow = async (req, res) => {
     await tx.wait();
 
     await db.query(
-      "UPDATE escrows SET status='released' WHERE escrow_id=?",
+      "UPDATE escrows SET status='released' WHERE id=?",
       [escrowId]
     );
-
 
     res.json({
       message: "Funds released successfully",

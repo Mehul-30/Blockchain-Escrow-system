@@ -4,7 +4,6 @@ import BuyPage from "./Components/BuyPage";
 import UserProfile from "./Components/UserProfile";
 import SellProductPage from "./Components/SellProductPage";
 import UserAuthentication from "./Components/UserAuthentication";
-import CreateEscrow from "./Components/CreateEscrow";
 import CredentialsPage from "./Components/CredentialsPage";
 
 const App = () => {
@@ -39,7 +38,6 @@ const App = () => {
           <Route path="/buyProducts" element={<BuyPage />} />
           <Route path="/userProfile" element={<UserProfile />} />
           <Route path="/userAuth" element={<UserAuthentication setIsLoggedIn={setIsLoggedIn} />} />
-          <Route path="/createEscrow" element={<CreateEscrow />} />
           <Route path="/credentials" element={<CredentialsPage />} />
         </Routes>
       </div>
